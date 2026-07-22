@@ -98,14 +98,3 @@ steps:
     fi
   displayName: "Add RUN_ID to Test Results"
   condition: always()
-
-- ${{ if eq(variables['Build.SourceBranchName'], 'main') }}:
-  - template: /steps/cloud/azure/upload-storage-account.yml
-    parameters:
-      source_file_name: $(TELESCOPE_METADATA_FILE)
-      destination_file_name: $(RUN_ID).json
-      subfolder: telescope-metadata/main
-      container_name: system
-      credential_type: ${{ parameters.credential_type }}
-      cloud: ${{ parameters.cloud }}
-      upload_type: "Telescope Metadata"
