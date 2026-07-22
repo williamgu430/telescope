@@ -36,7 +36,7 @@ variables:
   SCENARIO_NAME: image-pull-n10
   # Reuse the service connection the ACR image-pull-load pipeline uses; its SPN
   # can create AKS in the SEA-capable subscription dfb63c8c-7c89-4ef8-af13-75c1d873c895.
-  AZURE_SERVICE_CONNECTION: 'ACR - Dev'
+  AZURE_SERVICE_CONNECTION: 'ACR-Dev-william-telescope'
   AZURE_SUBSCRIPTION_ID: 'dfb63c8c-7c89-4ef8-af13-75c1d873c895'
   AZURE_SP_SUBSCRIPTION_ID: 'dfb63c8c-7c89-4ef8-af13-75c1d873c895'
 
