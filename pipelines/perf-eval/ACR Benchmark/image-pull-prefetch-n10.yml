@@ -7,7 +7,7 @@ parameters:
   - name: region
     displayName: Azure region
     type: string
-    default: centralus
+    default: southeastasia
   - name: registryEndpoint
     displayName: "Registry login server (e.g. myreg.azurecr-test.io)"
     type: string
@@ -24,13 +24,21 @@ parameters:
     type: string
     default: 780s
 
+# Microsoft-hosted pool (same as the working acr-telescope-image-pull-load
+# pipeline 465527). If msazure 1ES policy blocks vmImage, remove this block and
+# set the pool in the pipeline definition UI instead.
 pool:
-  name: 'AKS-Telescope-Airlock'
+  vmImage: ubuntu-latest
 
 variables:
   SCENARIO_TYPE: perf-eval
   # Reuses the committed 10-node scenario infra (terraform + tfvars).
   SCENARIO_NAME: image-pull-n10
+  # Reuse the service connection the ACR image-pull-load pipeline uses; its SPN
+  # can create AKS in the SEA-capable subscription dfb63c8c-7c89-4ef8-af13-75c1d873c895.
+  AZURE_SERVICE_CONNECTION: 'ACR - Dev'
+  AZURE_SUBSCRIPTION_ID: 'dfb63c8c-7c89-4ef8-af13-75c1d873c895'
+  AZURE_SP_SUBSCRIPTION_ID: 'dfb63c8c-7c89-4ef8-af13-75c1d873c895'
 
 stages:
   - stage: azure_${{ parameters.region }}_image_pull
