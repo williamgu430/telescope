@@ -18,6 +18,7 @@ steps:
 
       SYSTEM_NODE_POOL=${SYSTEM_NODE_POOL:-null}
       USER_NODE_POOL=${USER_NODE_POOL:-null}
+      USER_NODE_COUNT=${USER_NODE_COUNT:-null}
 
       if [ -z "$(AKS_CLI_CUSTOM_HEADERS)" ]; then
         AKS_CUSTOM_HEADERS='[]'
@@ -54,6 +55,7 @@ steps:
                 --argjson aks_custom_headers "$AKS_CUSTOM_HEADERS" \
                 --argjson aks_cli_system_node_pool "$SYSTEM_NODE_POOL" \
                 --argjson aks_cli_user_node_pool "$USER_NODE_POOL" \
+                --argjson user_node_count "$USER_NODE_COUNT" \
                 --arg public_key_path "$PUBLIC_KEY_PATH" \
                 '{
                   run_id: $run_id,
@@ -69,6 +71,7 @@ steps:
                   aks_custom_headers: $aks_custom_headers,
                   aks_cli_system_node_pool: $aks_cli_system_node_pool,
                   aks_cli_user_node_pool: $aks_cli_user_node_pool,
+                  user_node_count: $user_node_count,
                   public_key_path: $public_key_path
                 }' | jq 'with_entries(select(.value != null and .value != ""))')
         fi

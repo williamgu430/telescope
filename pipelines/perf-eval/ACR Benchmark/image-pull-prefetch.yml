@@ -17,6 +17,10 @@ parameters:
     displayName: Anonymous pull
     type: boolean
     default: true
+  - name: nodeCount
+    displayName: Puller node count (cluster size + pods)
+    type: number
+    default: 1000
   - name: podStartupLatencyThreshold
     displayName: Pod startup latency threshold (large cold pulls need a high value)
     type: string
@@ -52,9 +56,10 @@ stages:
             image: "ghcr.io/azure/clusterloader2:v20250513"
           topology: image-pull
           matrix:
-            image-pull-1000nodes:
-              desired_nodes: 1004
-              node_count: 1000
+            image-pull-nodes:
+              desired_nodes: ${{ parameters.nodeCount }}
+              node_count: ${{ parameters.nodeCount }}
+              user_node_count: ${{ parameters.nodeCount }}
               max_pods: 7
               repeats: 1              # one pull per node — the cold-start test
               operation_timeout: 60m

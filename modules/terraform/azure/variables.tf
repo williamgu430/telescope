@@ -34,6 +34,7 @@ variable "json_input" {
         })), [])
       }))
     )
+    user_node_count = optional(number, null)
   })
 
   validation {

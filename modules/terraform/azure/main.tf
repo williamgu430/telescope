@@ -1,12 +1,16 @@
 locals {
-  region                            = lookup(var.json_input, "region", "East US")
-  run_id                            = lookup(var.json_input, "run_id", "123456")
-  aks_sku_tier                      = lookup(var.json_input, "aks_sku_tier", null)
-  aks_kubernetes_version            = lookup(var.json_input, "aks_kubernetes_version", null)
-  aks_network_policy                = lookup(var.json_input, "aks_network_policy", null)
-  aks_network_dataplane             = lookup(var.json_input, "aks_network_dataplane", null)
-  aks_cli_system_node_pool          = lookup(var.json_input, "aks_cli_system_node_pool", null)
-  aks_cli_user_node_pool            = lookup(var.json_input, "aks_cli_user_node_pool", null)
+  region                   = lookup(var.json_input, "region", "East US")
+  run_id                   = lookup(var.json_input, "run_id", "123456")
+  aks_sku_tier             = lookup(var.json_input, "aks_sku_tier", null)
+  aks_kubernetes_version   = lookup(var.json_input, "aks_kubernetes_version", null)
+  aks_network_policy       = lookup(var.json_input, "aks_network_policy", null)
+  aks_network_dataplane    = lookup(var.json_input, "aks_network_dataplane", null)
+  aks_cli_system_node_pool = lookup(var.json_input, "aks_cli_system_node_pool", null)
+  aks_cli_user_node_pool   = lookup(var.json_input, "aks_cli_user_node_pool", null)
+  # Optional override for the azurerm-path user node pool size (extra_node_pool
+  # entry named "userpool"). Lets the pipeline set node count at run time instead
+  # of the value hardcoded in the scenario's tfvars. Null = use tfvars value.
+  user_node_count                   = lookup(var.json_input, "user_node_count", null)
   aks_custom_headers                = lookup(var.json_input, "aks_custom_headers", [])
   k8s_machine_type                  = lookup(var.json_input, "k8s_machine_type", null)
   k8s_os_disk_type                  = lookup(var.json_input, "k8s_os_disk_type", null)
@@ -49,6 +53,12 @@ locals {
       {
         sku_tier           = local.aks_sku_tier != null ? local.aks_sku_tier : aks.sku_tier
         kubernetes_version = local.aks_kubernetes_version != null ? local.aks_kubernetes_version : aks.kubernetes_version
+        # Override only the "userpool" node count when user_node_count is set;
+        # leave all other pools (e.g. prompool) untouched.
+        extra_node_pool = local.user_node_count != null ? [
+          for pool in aks.extra_node_pool :
+          pool.name == "userpool" ? merge(pool, { node_count = tonumber(local.user_node_count) }) : pool
+        ] : aks.extra_node_pool
       }
     )
   ] : []
