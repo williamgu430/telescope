@@ -64,6 +64,14 @@ spec:
           - "0"
           - --timeout
           - "3600"
+          {{else}}
+        # Pull-test images may have short-lived entrypoints. Override them so
+        # ClusterLoader2 can observe the pod reaching and remaining Ready.
+        command:
+          - /bin/sh
+          - -c
+        args:
+          - sleep 3600
           {{end}}
         {{end}}
         resources:

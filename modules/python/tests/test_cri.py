@@ -16,6 +16,33 @@ from kubernetes.client.models import (
 )
 
 class TestCRIClusterLoaderFunctions(unittest.TestCase):
+    def test_custom_memory_image_uses_keepalive_command(self):
+        template_path = os.path.join(
+            os.path.dirname(__file__),
+            "..",
+            "clusterloader2",
+            "cri",
+            "config",
+            "deployment_template.yaml",
+        )
+
+        with open(template_path, "r", encoding="utf-8") as template_file:
+            template = template_file.read()
+
+        self.assertIn('{{if eq $TestImage "e2e-test-images/resource-consumer:1.13"}}', template)
+        self.assertIn(
+            """          {{else}}
+        # Pull-test images may have short-lived entrypoints. Override them so
+        # ClusterLoader2 can observe the pod reaching and remaining Ready.
+        command:
+          - /bin/sh
+          - -c
+        args:
+          - sleep 3600
+          {{end}}""",
+            template,
+        )
+
     def _create_node(self, name, ready_status, cpu_allocatable="1000m", memory_allocatable="2048Mi", labels=None):
         conditions = [V1NodeCondition(type="Ready", status=ready_status)]
         allocatable = {"cpu": cpu_allocatable, "memory": memory_allocatable}
