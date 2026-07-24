@@ -82,6 +82,7 @@ jobs:
       regions: ${{ parameters.regions }}
       topology: ${{ parameters.topology }}
       engine: ${{ parameters.engine }}
+  - template: /steps/pin-acr-endpoints.yml
   - template: /steps/execute-tests.yml
     parameters:
       cloud: ${{ parameters.cloud }}

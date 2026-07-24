@@ -1,0 +1,86 @@
+steps:
+- script: |
+    set -euo pipefail
+
+    registry_name="${REGISTRY_ENDPOINT%%.*}"
+    data_endpoint="${registry_name}.${PIN_REGION}.data.azurecr-test.io"
+
+    cat <<EOF | kubectl apply -f -
+    apiVersion: apps/v1
+    kind: DaemonSet
+    metadata:
+      name: telescope-acr-endpoint-pin
+      namespace: kube-system
+    spec:
+      selector:
+        matchLabels:
+          app: telescope-acr-endpoint-pin
+      template:
+        metadata:
+          labels:
+            app: telescope-acr-endpoint-pin
+        spec:
+          nodeSelector:
+            cri-resource-consume: "true"
+          tolerations:
+          - key: cri-resource-consume
+            operator: Equal
+            value: "true"
+            effect: NoSchedule
+          - key: cri-resource-consume
+            operator: Equal
+            value: "true"
+            effect: NoExecute
+          containers:
+          - name: hosts-pin
+            image: mcr.microsoft.com/cbl-mariner/busybox:2.0
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              grep -qF '${REGISTRY_IP} ${REGISTRY_ENDPOINT}' /host/etc/hosts ||
+                echo '${REGISTRY_IP} ${REGISTRY_ENDPOINT}' >> /host/etc/hosts
+              grep -qF '${DATAPROXY_IP} ${data_endpoint}' /host/etc/hosts ||
+                echo '${DATAPROXY_IP} ${data_endpoint}' >> /host/etc/hosts
+              grep -F '${REGISTRY_ENDPOINT}' /host/etc/hosts
+              grep -F '${data_endpoint}' /host/etc/hosts
+              sleep 86400
+            securityContext:
+              privileged: true
+            volumeMounts:
+            - name: host-etc
+              mountPath: /host/etc
+          volumes:
+          - name: host-etc
+            hostPath:
+              path: /etc
+              type: Directory
+    EOF
+
+    kubectl rollout status daemonset/telescope-acr-endpoint-pin \
+      --namespace kube-system \
+      --timeout=5m
+
+    expected_nodes=$(kubectl get nodes \
+      --selector cri-resource-consume=true \
+      --no-headers | wc -l)
+    ready_pods=$(kubectl get pods \
+      --namespace kube-system \
+      --selector app=telescope-acr-endpoint-pin \
+      --field-selector status.phase=Running \
+      --no-headers | wc -l)
+
+    if [[ "$ready_pods" -ne "$expected_nodes" ]]; then
+      echo "##vso[task.logissue type=error;]Pinned $ready_pods of $expected_nodes puller nodes."
+      exit 1
+    fi
+
+    echo "Pinned ${REGISTRY_ENDPOINT} to ${REGISTRY_IP} and ${data_endpoint} to ${DATAPROXY_IP} on ${ready_pods} puller nodes."
+  displayName: "Temporarily pin ACR endpoints to SEA-1 deployment 0722"
+  condition: and(succeeded(), eq(variables['pin_acr_0722'], 'true'))
+  env:
+    REGISTRY_ENDPOINT: $(registry_endpoint)
+    REGISTRY_IP: $(registry_pin_ip)
+    DATAPROXY_IP: $(dataproxy_pin_ip)
+    PIN_REGION: $(pin_region)

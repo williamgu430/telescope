@@ -20,7 +20,7 @@ parameters:
   - name: nodeCount
     displayName: Puller node count (cluster size + pods)
     type: number
-    default: 1000
+    default: 20
   - name: podStartupLatencyThreshold
     displayName: Pod startup latency threshold (large cold pulls need a high value)
     type: string
@@ -60,7 +60,8 @@ stages:
               desired_nodes: ${{ parameters.nodeCount }}
               node_count: ${{ parameters.nodeCount }}
               user_node_count: ${{ parameters.nodeCount }}
-              max_pods: 7
+              # Includes the temporary endpoint-pin DaemonSet plus one workload pod.
+              max_pods: 8
               repeats: 1              # one pull per node — the cold-start test
               operation_timeout: 60m
               load_type: memory
@@ -74,6 +75,11 @@ stages:
               kubernetes_version: "1.34"
               pod_startup_latency_threshold: ${{ parameters.podStartupLatencyThreshold }}
               anonymous_pull: ${{ parameters.anonymousPull }}
+              # Temporary while ACIS traffic switching is unavailable.
+              pin_acr_0722: "true"
+              pin_region: southeastasia
+              registry_pin_ip: 57.155.172.70
+              dataproxy_pin_ip: 57.155.172.73
           max_parallel: 1
           credential_type: service_connection
           ssh_key_enabled: false
